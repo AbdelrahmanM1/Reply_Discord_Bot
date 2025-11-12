@@ -38,9 +38,10 @@ EMPTY = os.getenv("EMPTY", "False").lower() == "true"
 logging.basicConfig(level=logging.INFO)
 
 # ------------------ CONFIGURATION ------------------
-BADLION_PATTERN = re.compile(r"\bbadlion\b|بادليون", re.IGNORECASE | re.UNICODE)
+BADLION_PATTERN = re.compile(r"\bbadlion\b|بادليون|بادلايون", re.IGNORECASE | re.UNICODE)
 ROOM_PATTERN = re.compile(r"\broom\b|روم", re.IGNORECASE | re.UNICODE)
 CHANNEL_PATTERN = re.compile(r"\bchannel\b|قناة", re.IGNORECASE | re.UNICODE)
+METHOD_PATTERN = re.compile(r"\bmethod\b|طريقة", re.IGNORECASE | re.UNICODE )
 
 # Discord Intents
 intents = Intents.default()
@@ -70,6 +71,9 @@ async def send_message(member: discord.Member, message: str):
         logging.info(f"Sent DM to {member}")
 
     except discord.Forbidden:
+        if not hasattr(member, "guild") or not member.guild:
+          logging.warning(f"Could not send DM to {member}, no guild found.")
+          return
         # Fallback: send in the first accessible text channel
         for channel in member.guild.text_channels:
             if channel.permissions_for(member.guild.me).send_messages:
@@ -88,11 +92,13 @@ def contains_room_or_channel(text: str) -> bool:
     """Check if text mentions 'room' or 'channel' (English or Arabic)."""
     return bool(ROOM_PATTERN.search(text) or CHANNEL_PATTERN.search(text))
 
+def check_badlion_with_method(text: str) -> bool:
+    """Check if text contains 'badlion' along with 'method' (English or Arabic)."""
+    return bool(BADLION_PATTERN.search(text) and METHOD_PATTERN.search(text))
 
 def is_arabic(text: str) -> bool:
     """Detect if text contains Arabic characters."""
     return bool(re.search(r'[\u0600-\u06FF]', text))
-
 
 def generate_reply(text: str) -> str | None:
     """Generate a reply based on the EMPTY variable."""
