@@ -42,6 +42,7 @@ BADLION_PATTERN = re.compile(r"\bbadlion\b|بادليون|بادلايون", re.
 ROOM_PATTERN = re.compile(r"\broom\b|روم", re.IGNORECASE | re.UNICODE)
 CHANNEL_PATTERN = re.compile(r"\bchannel\b|قناة", re.IGNORECASE | re.UNICODE)
 METHOD_PATTERN = re.compile(r"\bmethod\b|طريقة|طريقه", re.IGNORECASE | re.UNICODE )
+ACCOUNT_PATTERN = re.compile(r"\baccount(s)?\b|حساب(ات)?", re.IGNORECASE | re.UNICODE)
 
 # Discord Intents
 intents = Intents.default()
@@ -96,6 +97,26 @@ def check_badlion_with_method(text: str) -> bool:
     """Check if text contains 'badlion' along with 'method' (English or Arabic)."""
     return bool(BADLION_PATTERN.search(text) and METHOD_PATTERN.search(text))
 
+def check_badlion_with_account(text: str) -> bool:
+    """Check if text contains 'badlion' along with 'account' (English or Arabic)."""
+    return bool(BADLION_PATTERN.search(text) and ACCOUNT_PATTERN.search(text))
+
+def is_download_question(text: str) -> bool:
+    """Detect if user is asking how to download/install Badlion."""
+    download_keywords = [
+        r"\bhow\s+to\s+(download|install)\b",
+        r"\bdownload\s+badlion\b",
+        r"\binstall\s+badlion\b",
+        r"كيف\s+احمل",
+        r"كيفية\s+تثبيت",
+        r"ازاي\s+احمل",
+    ]
+    for pattern in download_keywords:
+        if re.search(pattern, text, re.IGNORECASE | re.UNICODE):
+            logging.info("Ignored: Download Question")
+            return True
+    return False
+
 def is_arabic(text: str) -> bool:
     """Detect if text contains Arabic characters."""
     return bool(re.search(r'[\u0600-\u06FF]', text))
@@ -105,11 +126,15 @@ def generate_reply(text: str) -> str | None:
     return generate_reply_empty_true(text) if EMPTY else generate_reply_empty_false(text)
 
 
+
 def generate_reply_empty_true(text: str) -> str | None:
     """Generate reply when accounts are claimed (EMPTY = True)."""
     if not contains_badlion(text):
         return None
-
+    
+    if is_download_question(text):
+        return None
+    
     arabic = is_arabic(text)
 
     if contains_room_or_channel(text):
@@ -123,6 +148,9 @@ def generate_reply_empty_false(text: str) -> str | None:
     if not contains_badlion(text):
         return None
 
+    if is_download_question(text):
+       return None
+    
     arabic = is_arabic(text)
 
     if contains_room_or_channel(text):
