@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.INFO)
 BADLION_PATTERN = re.compile(r"\bbadlion\b|بادليون|بادلايون", re.IGNORECASE | re.UNICODE)
 ROOM_PATTERN = re.compile(r"\broom\b|روم", re.IGNORECASE | re.UNICODE)
 CHANNEL_PATTERN = re.compile(r"\bchannel\b|قناة", re.IGNORECASE | re.UNICODE)
-METHOD_PATTERN = re.compile(r"\bmethod\b|طريقة", re.IGNORECASE | re.UNICODE )
+METHOD_PATTERN = re.compile(r"\bmethod\b|طريقة|طريقه", re.IGNORECASE | re.UNICODE )
 
 # Discord Intents
 intents = Intents.default()
