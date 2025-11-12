@@ -24,7 +24,7 @@ import os
 import re
 import logging
 import discord
-from discord import Intents
+from discord import Intents, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -101,6 +101,7 @@ def check_badlion_with_account(text: str) -> bool:
     """Check if text contains 'badlion' along with 'account' (English or Arabic)."""
     return bool(BADLION_PATTERN.search(text) and ACCOUNT_PATTERN.search(text))
 
+
 def is_download_question(text: str) -> bool:
     """Detect if user is asking how to download/install Badlion."""
     download_keywords = [
@@ -124,7 +125,6 @@ def is_arabic(text: str) -> bool:
 def generate_reply(text: str) -> str | None:
     """Generate a reply based on the EMPTY variable."""
     return generate_reply_empty_true(text) if EMPTY else generate_reply_empty_false(text)
-
 
 
 def generate_reply_empty_true(text: str) -> str | None:
@@ -159,12 +159,35 @@ def generate_reply_empty_false(text: str) -> str | None:
         return "موضوع و القناة مفتوحة حالياً الحق قبل ما تقفل" if arabic else "The room/channel is currently open — act before it closes."
 
 
+# -------------------- SLASH COMMANDS --------------------
+
+@bot.tree.command(name="toggle-empty", description="Toggle account availability (Admins only)")
+@app_commands.default_permissions(administrator=True)
+async def toggle_empty(interaction: discord.Interaction):
+    """Toggle the EMPTY status to change account availability."""
+    global EMPTY
+    EMPTY = not EMPTY
+    status = "unavailable (all accounts claimed)" if EMPTY else "available (accounts still open)"
+    await interaction.response.send_message(f"Account status changed to **{status}**", ephemeral=True)
+    logging.info(f"EMPTY toggled to {EMPTY} by {interaction.user}")
+
+
+@bot.tree.command(name="status", description="Check current account availability")
+async def check_status(interaction: discord.Interaction):
+    """Check the current EMPTY status."""
+    status = "All Badlion accounts have been claimed" if EMPTY else "Badlion accounts are still available"
+    await interaction.response.send_message(status, ephemeral=True)
+    logging.info(f"Status checked by {interaction.user}")
+
+
 # -------------------- EVENTS --------------------
 
 @bot.event
 async def on_ready():
+    await bot.tree.sync()
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("Bot is running and monitoring messages...")
+    print(f"Slash commands synced. Account status: {'UNAVAILABLE (EMPTY)' if EMPTY else 'AVAILABLE'}")
 
 
 @bot.event
